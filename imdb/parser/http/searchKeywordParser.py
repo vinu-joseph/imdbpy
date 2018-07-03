@@ -29,23 +29,20 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 from imdb.utils import analyze_title
 
-from .piculet import Path, Rule, Rules
+from .piculet import Path, Rule, Rules, reducers
 from .searchMovieParser import DOMHTMLSearchMovieParser
 from .utils import analyze_imdbid
 
 
 class DOMHTMLSearchKeywordParser(DOMHTMLSearchMovieParser):
-    """Parse the html page that the IMDb web server shows when the
-    "new search system" is used, searching for keywords similar to
-    the one given."""
-    _linkPrefix = '/keyword/'
+    """A parser for the keyword search page."""
 
     rules = [
         Rule(
             key='data',
             extractor=Path(
-                foreach='//a[starts-with(@href, "/keyword/")]/..',
-                path='./a[1]/text()'
+                foreach='//td[@class="result_text"]',
+                path='./a/text()'
             )
         )
     ]
@@ -66,23 +63,21 @@ def custom_analyze_title4kwd(title, yearNote, outline):
 
 
 class DOMHTMLSearchMovieKeywordParser(DOMHTMLSearchMovieParser):
-    """Parse the html page that the IMDb web server shows when the
-    "new search system" is used, searching for movies with the given
-    keyword."""
+    """A parser for the movie search by keyword page."""
 
     rules = [
         Rule(
             key='data',
             extractor=Rules(
-                foreach='//div[@class="lister-list"]//h3//a[starts-with(@href, "/title/tt")]/..',
+                foreach='//h3[@class="lister-item-header"]',
                 rules=[
                     Rule(
                         key='link',
-                        extractor=Path('./a[1]/@href')
+                        extractor=Path('./a/@href', reduce=reducers.first)
                     ),
                     Rule(
                         key='info',
-                        extractor=Path('./a[1]//text()')
+                        extractor=Path('./a//text()')
                     ),
                     Rule(
                         key='ynote',
@@ -94,10 +89,12 @@ class DOMHTMLSearchMovieKeywordParser(DOMHTMLSearchMovieParser):
                     )
                 ],
                 transform=lambda x: (
-                    analyze_imdbid(x.get('link') or ''),
-                    custom_analyze_title4kwd(x.get('info') or '',
-                                             x.get('ynote') or '',
-                                             x.get('outline') or '')
+                    analyze_imdbid(x.get('link')),
+                    custom_analyze_title4kwd(
+                        x.get('info', ''),
+                        x.get('ynote', ''),
+                        x.get('outline', '')
+                    )
                 )
             )
         )
