@@ -34,14 +34,6 @@ from .searchMovieParser import DOMHTMLSearchMovieParser
 from .utils import analyze_imdbid
 
 
-def _cleanName(n):
-    """Clean the name in a title tag."""
-    if not n:
-        return ''
-    n = n.replace('Filmography by type for', '')    # FIXME: temporary.
-    return n
-
-
 class DOMHTMLSearchPersonParser(DOMHTMLSearchMovieParser):
     """A parser for the name search page."""
 
@@ -67,7 +59,7 @@ class DOMHTMLSearchPersonParser(DOMHTMLSearchMovieParser):
                     ),
                     Rule(
                         key='akas',
-                        extractor=Path('.//div[@class="_imdbpyAKA"]/text()')
+                        extractor=Path(foreach='./i', path='./text()')
                     )
                 ],
                 transform=lambda x: (
