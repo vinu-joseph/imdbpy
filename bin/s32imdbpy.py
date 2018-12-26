@@ -196,5 +196,5 @@ if __name__ == '__main__':
         logger.setLevel(logging.DEBUG)
     engine = sqlalchemy.create_engine(db_uri+"?charset=utf8", encoding='utf-8', echo=False)
     metadata.bind = engine
-    #import_dir(dir_name, engine)
+    import_dir(dir_name, engine)
     push_to_sqs(deploy_env)
