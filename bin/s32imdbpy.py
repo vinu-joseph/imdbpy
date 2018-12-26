@@ -28,6 +28,9 @@ import gzip
 import logging
 import argparse
 import sqlalchemy
+import boto3
+import json
+import logging
 
 from imdb.parser.s3.utils import DB_TRANSFORM, title_soundex, name_soundexes
 
@@ -35,9 +38,13 @@ TSV_EXT = '.tsv.gz'
 # how many entries to write to the database at a time.
 BLOCK_SIZE = 10000
 
+sqs_client = boto3.client('sqs')
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 metadata = sqlalchemy.MetaData()
+
+sqs_urls = {"preprod":"https://sqs.us-east-1.amazonaws.com/028404762669/preprod_sidekiq_jobs","production": "https://sqs.us-east-1.amazonaws.com/028404762669/production_sidekiq_jobs"}
 
 
 def generate_content(fd, headers, table):
@@ -169,18 +176,28 @@ def import_dir(dir_name, engine):
             continue
         import_file(fn, engine)
 
+def push_to_sqs(environ):
+    message_payload = json.dumps([{
+        'queue_name': environ + "_sidekiq_jobs",
+        'class_name': 'IMDBProgramMappingWorker',
+        'args': None
+    }])
+    queue_url = "https://sqs.us-east-1.amazonaws.com/028404762669/" + environ + "_sidekiq_jobs"
+    sqs_client.send_message(QueueUrl=queue_url, MessageBody=message_payload)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('tsv_files_dir')
     parser.add_argument('db_uri')
+    parser.add_argument('deploy_env')
     parser.add_argument('--verbose', help='increase verbosity and show progress', action='store_true')
     args = parser.parse_args()
     dir_name = args.tsv_files_dir
     db_uri = args.db_uri
+    deploy_env = args.deploy_env
     if args.verbose:
         logger.setLevel(logging.DEBUG)
-    engine = sqlalchemy.create_engine(db_uri, encoding='utf-8', echo=False)
+    engine = sqlalchemy.create_engine(db_uri+"?charset=utf8", encoding='utf-8', echo=False)
     metadata.bind = engine
-    import_dir(dir_name, engine)
-
+    #import_dir(dir_name, engine)
+    push_to_sqs(deploy_env)
