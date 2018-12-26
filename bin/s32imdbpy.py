@@ -44,9 +44,6 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 metadata = sqlalchemy.MetaData()
 
-sqs_urls = {"preprod":"https://sqs.us-east-1.amazonaws.com/028404762669/preprod_sidekiq_jobs","production": "https://sqs.us-east-1.amazonaws.com/028404762669/production_sidekiq_jobs"}
-
-
 def generate_content(fd, headers, table):
     """Generate blocks of rows to be written to the database.
 
