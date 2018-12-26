@@ -198,3 +198,4 @@ if __name__ == '__main__':
     metadata.bind = engine
     #import_dir(dir_name, engine)
     push_to_sqs(deploy_env)
+    
