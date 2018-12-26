@@ -175,9 +175,9 @@ def import_dir(dir_name, engine):
 
 def push_to_sqs(environ):
     message_payload = json.dumps([{
-        'queue_name': environ + "_sidekiq_jobs",
+        'queue_name': "mappers",
         'class_name': 'IMDBProgramMappingWorker',
-        'args': None
+        'args': ["all"]
     }])
     queue_url = "https://sqs.us-east-1.amazonaws.com/028404762669/" + environ + "_sidekiq_jobs"
     sqs_client.send_message(QueueUrl=queue_url, MessageBody=message_payload)
@@ -198,4 +198,3 @@ if __name__ == '__main__':
     metadata.bind = engine
     #import_dir(dir_name, engine)
     push_to_sqs(deploy_env)
-    
